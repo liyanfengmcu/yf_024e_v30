@@ -2427,8 +2427,8 @@
 		assigned-clock-rates = <0x00 0x7735940>;
 		pinctrl-names = "default";
 		pinctrl-0 = <0x83 0x84 0x85 0x86 0x87>;
-		tx_delay = <0x42>;
-		rx_delay = <0x32>;
+		tx_delay = <0x48>;
+		rx_delay = <0x36>;
 		phy-handle = <0x88>;
 		phandle = <0x197>;
 
@@ -2441,6 +2441,9 @@
 			phy@0 {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <0x00>;
+				max-speed = <1000>;
+				pause;
+				asym-pause;
 				phandle = <0x88>;
 			};
 		};
