@@ -1,7 +1,7 @@
 /dts-v1/;
 
 / {
-	compatible = "rockchip,rk3568-yf-xxxe-3lcd\0rockchip,rk3568";
+	compatible = "rockchip,rk3568";
 	interrupt-parent = <0x01>;
 	#address-cells = <0x02>;
 	#size-cells = <0x02>;
@@ -514,8 +514,8 @@
 
 	display-subsystem {
 		compatible = "rockchip,display-subsystem";
-		memory-region = <0x10 0x11>;
-		memory-region-names = "drm-logo\0drm-cubic-lut";
+		memory-region = <0x14f>;
+		memory-region-names = "linux,cma";
 		ports = <0x12>;
 		devfreq = <0x13>;
 		phandle = <0x145>;
@@ -523,7 +523,7 @@
 		route {
 
 			route-dsi0 {
-				status = "okay";
+				status = "disabled";
 				logo,uboot = "logo.bmp";
 				logo,kernel = "logo_kernel.bmp";
 				logo,mode = "center";
@@ -533,7 +533,7 @@
 			};
 
 			route-dsi1 {
-				status = "okay";
+				status = "disabled";
 				logo,uboot = "logo.bmp";
 				logo,kernel = "logo_kernel.bmp";
 				logo,mode = "center";
@@ -543,7 +543,7 @@
 			};
 
 			route-edp {
-				status = "okay";
+				status = "disabled";
 				logo,uboot = "logo.bmp";
 				logo,kernel = "logo_kernel.bmp";
 				logo,mode = "center";
@@ -633,18 +633,6 @@
 		#size-cells = <0x02>;
 		ranges;
 		phandle = <0x14f>;
-
-		drm-logo@00000000 {
-			compatible = "rockchip,drm-logo";
-			reg = <0x00 0x00 0x00 0x00>;
-			phandle = <0x10>;
-		};
-
-		drm-cubic-lut@00000000 {
-			compatible = "rockchip,drm-cubic-lut";
-			reg = <0x00 0x00 0x00 0x00>;
-			phandle = <0x11>;
-		};
 
 		linux,cma {
 			compatible = "shared-dma-pool";
@@ -2620,7 +2608,7 @@
 		rockchip,grf = <0x36>;
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
-		status = "okay";
+		status = "disabled";
 		rockchip,lane-rate = <0x3e8>;
 		rockchip,dual-channel = <0x97>;
 		phandle = <0x19d>;
@@ -2661,7 +2649,7 @@
 		};
 
 		panel@0 {
-			status = "okay";
+			status = "disabled";
 			compatible = "simple-panel-dsi";
 			reg = <0x00>;
 			backlight = <0x9a>;
@@ -2673,20 +2661,7 @@
 			dsi,flags = <0xa03>;
 			dsi,format = <0x00>;
 			dsi,lanes = <0x08>;
-			panel-init-sequence = [39 00 04 ff 98 81 03 15 00 02 01 00 15 00 02 02 00 15 00 02 03 53 15 00 02 04 d3 15 00 02 05 00 15 00 02 06 0d 15 00 02 07 08 15 00 02 08 00 15 00 02 09 00 15 00 02 0a 00 15 00 02 0b 00 15 00 02 0c 00 15 00 02 0d 00 15 00 02 0e 00 15 00 02 0f 28 15 00 02 10 28 15 00 02 11 00 15 00 02 12 00 15 00 02 13 00 15 00 02 14 00 15 00 02 15 00 15 00 02 16 00 15 00 02 17 00 15 00 02 18 00 15 00 02 19 00 15 00 02 1a 00 15 00 02 1b 00 15 00 02 1c 00 15 00 02 1d 00 15 00 02 1e 40 15 00 02 1f 80 15 00 02 20 06 15 00 02 21 01 15 00 02 22 00 15 00 02 23 00 15 00 02 24 00 15 00 02 25 00 15 00 02 26 00 15 00 02 27 00 15 00 02 28 33 15 00 02 29 33 15 00 02 2a 00 15 00 02 2b 00 15 00 02 2c 00 15 00 02 2d 00 15 00 02 2e 00 15 00 02 2f 00 15 00 02 30 00 15 00 02 31 00 15 00 02 32 00 15 00 02 33 00 15 00 02 34 03 15 00 02 35 00 15 00 02 36 00 15 00 02 37 00 15 00 02 38 96 15 00 02 39 00 15 00 02 3a 00 15 00 02 3b 00 15 00 02 3c 00 15 00 02 3d 00 15 00 02 3e 00 15 00 02 3f 00 15 00 02 40 00 15 00 02 41 00 15 00 02 42 00 15 00 02 43 00 15 00 02 44 00 15 00 02 50 00 15 00 02 51 23 15 00 02 52 45 15 00 02 53 67 15 00 02 54 89 15 00 02 55 ab 15 00 02 56 01 15 00 02 57 23 15 00 02 58 45 15 00 02 59 67 15 00 02 5a 89 15 00 02 5b ab 15 00 02 5c cd 15 00 02 5d ef 15 00 02 5e 00 15 00 02 5f 08 15 00 02 60 08 15 00 02 61 06 15 00 02 62 06 15 00 02 63 01 15 00 02 64 01 15 00 02 65 00 15 00 02 66 00 15 00 02 67 02 15 00 02 68 15 15 00 02 69 15 15 00 02 6a 14 15 00 02 6b 14 15 00 02 6c 0d 15 00 02 6d 0d 15 00 02 6e 0c 15 00 02 6f 0c 15 00 02 70 0f 15 00 02 71 0f 15 00 02 72 0e 15 00 02 73 0e 15 00 02 74 02 15 00 02 75 08 15 00 02 76 08 15 00 02 77 06 15 00 02 78 06 15 00 02 79 01 15 00 02 7a 01 15 00 02 7b 00 15 00 02 7c 00 15 00 02 7d 02 15 00 02 7e 15 15 00 02 7f 15 15 00 02 80 14 15 00 02 81 14 15 00 02 82 0d 15 00 02 83 0d 15 00 02 84 0c 15 00 02 85 0c 15 00 02 86 0f 15 00 02 87 0f 15 00 02 88 0e 15 00 02 89 0e 15 00 02 8a 02 39 00 04 ff 98 81 04 15 00 02 6e 2b 15 00 02 6f 37 15 00 02 3a a4 15 00 02 8d 1a 15 00 02 87 ba 15 00 02 b2 d1 15 00 02 88 0b 15 00 02 38 01 15 00 02 39 00 15 00 02 b5 07 15 00 02 31 75 15 00 02 3b 98 39 00 04 ff 98 81 01 15 00 02 22 0a 15 00 02 31 00 15 00 02 53 40 15 00 02 55 40 15 00 02 50 99 15 00 02 51 94 15 00 02 60 10 15 00 02 62 20 15 00 02 a0 00 15 00 02 a1 00 15 00 02 a2 15 15 00 02 a3 14 15 00 02 a4 1b 15 00 02 a5 2f 15 00 02 a6 25 15 00 02 a7 24 15 00 02 a8 80 15 00 02 a9 1f 15 00 02 aa 2c 15 00 02 ab 6c 15 00 02 ac 16 15 00 02 ad 14 15 00 02 ae 4d 15 00 02 af 20 15 00 02 b0 29 15 00 02 b1 4f 15 00 02 b2 5f 15 00 02 b3 23 15 00 02 c0 00 15 00 02 c1 2e 15 00 02 c2 3b 15 00 02 c3 15 15 00 02 c4 16 15 00 02 c5 28 15 00 02 c6 1a 15 00 02 c7 1c 15 00 02 c8 a7 15 00 02 c9 1b 15 00 02 ca 28 15 00 02 cb 92 15 00 02 cc 1f 15 00 02 cd 1c 15 00 02 ce 4b 15 00 02 cf 1f 15 00 02 d0 28 15 00 02 d1 4e 15 00 02 d2 5c 15 00 02 d3 23 39 00 04 ff 98 81 00 15 00 02 11 00 05 78 01 29 15 00 02 29 00 05 14 01 11];
-			panel-exit-sequence = <0x5000128 0x5000110>;
-			gm8775c = <0x9b>;
-			enable-gpios = <0x43 0x18 0x00>;
-			reset-gpios = <0x43 0x03 0x01 0x43 0x04 0x01>;
-			init-delay-ms = <0x3c>;
-			gm8775c_table = <0x00 0xaa 0x48 0x02 0xb6 0x20 0x01 0x20 0x02 0x00 0x03 0x53 0x04 0x28 0x05 0x04 0x06 0x42 0x07 0x00 0x08 0x1e 0x09 0x04 0x0a 0x08 0x0b 0x82 0x0c 0x14 0x0d 0x01 0x0e 0x80 0x0f 0x20 0x10 0x20 0x11 0x03 0x12 0x1b 0x13 0x03 0x14 0x01 0x15 0x23 0x16 0x40 0x17 0x00 0x18 0x01 0x19 0x23 0x1a 0x40 0x1b 0x00 0x1e 0x46 0x51 0x30 0x1f 0x10 0x2a 0x01>;
-			power-supply = <0x9c>;
-			pinctrl-names = "default";
-			pinctrl-0 = <0x9d 0x9e>;
 			phandle = <0x19f>;
-
-			display-timings {
-				native-mode = <0x9f>;
 				phandle = <0x1a0>;
 
 				timing0 {
@@ -2703,10 +2678,6 @@
 					vsync-active = <0x00>;
 					de-active = <0x00>;
 					pixelclk-active = <0x00>;
-					tp-revert-x = <0x01>;
-					tp-revert-y = <0x00>;
-					tp-swap-xy = <0x01>;
-					tp-flag = <0x01>;
 					phandle = <0x9f>;
 				};
 			};
@@ -2741,7 +2712,7 @@
 		rockchip,grf = <0x36>;
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
-		status = "okay";
+		status = "disabled";
 		rockchip,lane-rate = <0x3d4>;
 		phandle = <0x97>;
 
@@ -2781,7 +2752,7 @@
 		};
 
 		panel@0 {
-			status = "okay";
+			status = "disabled";
 			compatible = "simple-panel-dsi";
 			reg = <0x00>;
 			backlight = <0xa3>;
@@ -2817,10 +2788,6 @@
 					vsync-active = <0x00>;
 					de-active = <0x00>;
 					pixelclk-active = <0x00>;
-					tp-revert-x = <0x01>;
-					tp-revert-y = <0x00>;
-					tp-swap-xy = <0x01>;
-					tp-flag = <0x01>;
 					phandle = <0xa5>;
 				};
 			};
@@ -2895,7 +2862,7 @@
 		phys = <0xab>;
 		phy-names = "dp";
 		power-domains = <0x21 0x09>;
-		status = "okay";
+		status = "disabled";
 		force-hpd;
 		phandle = <0x1a5>;
 
@@ -3682,7 +3649,7 @@
 		#sound-dai-cells = <0x00>;
 		pinctrl-names = "default";
 		pinctrl-0 = <0xdd>;
-		status = "okay";
+		status = "disabled";
 		phandle = <0x135>;
 	};
 
@@ -3807,6 +3774,7 @@
 		phandle = <0x1c1>;
 
 		ilitek@41 {
+			status = "disabled";
 			compatible = "tchip,ilitek";
 			reg = <0x41>;
 			ilitek,reset-gpio = <0x3a 0x0e 0x00>;
@@ -3815,12 +3783,14 @@
 		};
 
 		wdt87xx_i2c@2c {
+			status = "disabled";
 			compatible = "wdt,wdt87xx";
 			reg = <0x2c>;
 			phandle = <0x1c3>;
 		};
 
 		gt9xx@5d {
+			status = "disabled";
 			compatible = "goodix,gt9xx";
 			reg = <0x5d>;
 			goodix,rst-gpio = <0x3a 0x0e 0x00>;
@@ -3892,7 +3862,7 @@
 		phandle = <0x1c8>;
 
 		mxc6655xa@15 {
-			status = "okay";
+			status = "disabled";
 			compatible = "gs_mxc6655xa";
 			pinctrl-names = "default";
 			pinctrl-0 = <0xe5>;
@@ -5420,7 +5390,7 @@
 	};
 
 	edp-panel {
-		status = "okay";
+		status = "disabled";
 		compatible = "simple-panel";
 		backlight = <0x124>;
 		enable-gpios = <0x43 0x19 0x00>;
@@ -5450,10 +5420,6 @@
 				vsync-active = <0x00>;
 				de-active = <0x00>;
 				pixelclk-active = <0x00>;
-				tp-revert-x = <0x00>;
-				tp-revert-y = <0x00>;
-				tp-swap-xy = <0x00>;
-				tp-flag = <0x01>;
 				phandle = <0x126>;
 			};
 		};
