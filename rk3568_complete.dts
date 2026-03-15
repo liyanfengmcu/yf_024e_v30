@@ -5,7 +5,7 @@
 	interrupt-parent = <0x01>;
 	#address-cells = <0x02>;
 	#size-cells = <0x02>;
-	model = "Young-Feel YF-011E RK3568 Board";
+	model = "Young-Feel YF-024E RK3568 Board";
 
 	ddr3-params {
 		version = <0x100>;
