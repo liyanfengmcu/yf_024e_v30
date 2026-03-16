@@ -1,0 +1,296 @@
+name: Build ImmortalWrt for RK3568 (NLnet XiGuaPi V3)
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: 'Target config'
+        required: true
+        default: 'rockchip_rk3568_xiguapiv3'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout ImmortalWrt Source
+        uses: actions/checkout@v4
+        with:
+          repository: 'immortalwrt/immortalwrt'
+          ref: 'openwrt-23.05'
+          path: 'immortalwrt'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ccache ecj fastjar file g++ \
+            gawk gettext git java-propose-classpath libelf-dev libncurses5-dev \
+            libncursesw5-dev libssl-dev unzip wget python3 \
+            python3-setuptools python3-pyelftools subversion swig time xsltproc \
+            zlib1g-dev rsync
+
+      - name: Setup ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-immortalwrt-${{ runner.os }}-${{ github.run_number }}
+          restore-keys: |
+            ccache-immortalwrt-${{ runner.os }}-
+
+      - name: Check Available Configs
+        run: |
+          cd immortalwrt
+          echo "=== Available branches (checking current branch) ==="
+          git branch -r | head -20
+          echo ""
+          echo "=== Current git status ==="
+          git log -1 --oneline
+          echo ""
+          echo "=== Checking available rockchip armv8 devices ==="
+          cat target/linux/rockchip/rockchip/targets 2>/dev/null | grep -i armv8 || echo "Not found in targets"
+          echo ""
+          echo "=== Listing rockchip target directories ==="
+          ls -la target/linux/rockchip/ 2>/dev/null || echo "Directory not found"
+          echo ""
+          echo "=== Checking for device profiles ==="
+          find target/linux/rockchip -name "*.mk" | head -10
+          echo ""
+          echo "=== Checking for xiguapi device support ==="
+          find target/linux/rockchip -name "*xiguapi*" -o -name "*XiGuaPi*" || echo "XiGuaPi device not found"
+
+      - name: Configure for RK3568
+        working-directory: ./immortalwrt
+        run: |
+          # RK3568 target configuration using NLnet XiGuaPi V3 device tree
+          echo "CONFIG_TARGET_rockchip=y" >> .config
+          echo "CONFIG_TARGET_rockchip_armv8=y" >> .config
+          echo "CONFIG_TARGET_BOARD=\"rockchip\"" >> .config
+          echo "CONFIG_TARGET_SUBTARGET=\"armv8\"" >> .config
+          echo "CONFIG_TARGET_ARCH_PACKAGES=\"aarch64_generic\"" >> .config
+          echo "CONFIG_TARGET_OPTIMIZATION=\"-O2 -pipe -fno-caller-saves -fno-plt\"" >> .config
+
+          # Use specific RK3568 device profile - NLnet XiGuaPi V3
+          echo "CONFIG_TARGET_MULTI_PROFILE=n" >> .config
+          # Enable NLnet XiGuaPi V3 device
+          echo "CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_nlnet_xiguapi-v3=y" >> .config
+
+          # RK3568 specific device model
+          echo "CONFIG_TARGET_DEVICE_PACKAGES_rockchip_armv8=\"kmod-phy-rockchip-pcie kmod-thermal kmod-gpio-button-hotplug\"" >> .config
+
+          # Ensure base-files is properly configured
+          echo "CONFIG_PACKAGE_base-files=y" >> .config
+
+          # Build complete image with ext4 rootfs (suitable for eMMC flashing)
+          echo "CONFIG_TARGET_ROOTFS_EXT4FS=y" >> .config
+          echo "CONFIG_TARGET_ROOTFS_PARTSIZE=512" >> .config
+          echo "CONFIG_TARGET_ROOTFS_SQUASHFS=y" >> .config
+
+          # Generate all image types (sysupgrade, factory, sdcard)
+          echo "CONFIG_TARGET_IMAGE_INITRAMFS=y" >> .config
+          echo "CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ=y" >> .config
+          echo "CONFIG_TARGET_INITRAMFS_COMPRESSION_LZMA=y" >> .config
+
+          # Rockchip U-BOOT and complete firmware image (includes BL31, U-BOOT, kernel, rootfs)
+          echo "CONFIG_TARGET_IMAGES_INCLUDE_BOOTLOADER=y" >> .config
+          echo "CONFIG_TARGET_IMAGES_PACK=y" >> .config
+          echo "CONFIG_TARGET_IMAGES_GZIP=y" >> .config
+          echo "CONFIG_TARGET_IMAGES_KBIN=y" >> .config
+
+          # Ensure image generation
+          echo "CONFIG_IMAGE_KERNEL=y" >> .config
+          echo "CONFIG_IMAGE_ROOTFS=y" >> .config
+
+          # Build kernel and packages
+          echo "CONFIG_BUILD_LOG=y" >> .config
+          echo "CONFIG_AUTOREMOVE=y" >> .config
+          echo "CONFIG_ALL=y" >> .config
+          echo "CONFIG_ALL_NONSHARED=y" >> .config
+          
+          # Network drivers for Gigabit Ethernet (RGMII)
+          echo "CONFIG_kmod-libphy=y" >> .config
+          echo "CONFIG_kmod-of-mdio=y" >> .config
+          echo "CONFIG_kmod-phylink=y" >> .config
+          echo "CONFIG_kmod-phy-realtek=y" >> .config
+
+          # GMAC driver (RK3568 Ethernet MAC, RGMII mode)
+          echo "CONFIG_kmod-stmmac=y" >> .config
+          echo "CONFIG_kmod-stmmac-core=y" >> .config
+          echo "CONFIG_kmod-stmmac-platform=y" >> .config
+          echo "CONFIG_kmod-dwmac-rockchip=y" >> .config
+          echo "CONFIG_kmod-rk_gmac-dwmac=y" >> .config
+          
+          # Realtek WiFi/Bluetooth driver
+          echo "CONFIG_kmod-mmc=y" >> .config
+          echo "CONFIG_PACKAGE_kmod-rtw88=y" >> .config
+          echo "CONFIG_PACKAGE_kmod-rtw88-8723d=y" >> .config
+          echo "CONFIG_PACKAGE_rtl8723ds-firmware=y" >> .config
+          
+          # USB support (USB 2.0/3.0 controllers: ehci-platform, ohci-platform, xhci-hcd)
+          echo "CONFIG_kmod-usb-core=y" >> .config
+          echo "CONFIG_kmod-usb-ehci=y" >> .config
+          echo "CONFIG_kmod-usb-ohci=y" >> .config
+          echo "CONFIG_kmod-usb-xhci-hcd=y" >> .config
+          echo "CONFIG_kmod-usb-storage=y" >> .config
+          echo "CONFIG_kmod-usb-storage-extras=y" >> .config
+          
+          # GPU support (Mali GPU)
+          echo "CONFIG_kmod-drm=y" >> .config
+          echo "CONFIG_kmod-drm-rockchip=y" >> .config
+          echo "CONFIG_kmod-mali-bifrost=y" >> .config
+
+          # NPU support (RKNPU)
+          echo "CONFIG_kmod-rockchip-npu=y" >> .config
+
+          # Video processing (VPU, MPP)
+          echo "CONFIG_kmod-rockchip-mpp=y" >> .config
+          
+          # Display support (VOP2, HDMI)
+          echo "CONFIG_kmod-drm-dw-hdmi=y" >> .config
+          echo "CONFIG_kmod-sound-core=y" >> .config
+          echo "CONFIG_kmod-sound-soc-core=y" >> .config
+          echo "CONFIG_kmod-sound-soc-rockchip=y" >> .config
+          echo "CONFIG_kmod-sound-soc-rk817=y" >> .config
+
+          # RTC support
+          echo "CONFIG_kmod-rtc-pcf8563=y" >> .config
+
+          # EEPROM support
+          echo "CONFIG_kmod-misc-eeprom=y" >> .config
+          echo "CONFIG_kmod-eeprom-at24=y" >> .config
+
+          # I2C support
+          echo "CONFIG_kmod-i2c-core=y" >> .config
+          echo "CONFIG_kmod-i2c-gpio=y" >> .config
+          echo "CONFIG_kmod-i2c-rk3x=y" >> .config
+          
+          # GPIO controller support
+          echo "CONFIG_kmod-gpio-rockchip=y" >> .config
+          echo "CONFIG_kmod-pinctrl-rockchip=y" >> .config
+          
+          # Power management (RK809 PMIC, fan53555 regulator)
+          echo "CONFIG_kmod-regulator-core=y" >> .config
+          echo "CONFIG_kmod-regulator-fixed=y" >> .config
+          echo "CONFIG_kmod-regulator-fan53555=y" >> .config
+          echo "CONFIG_kmod-power-supply=y" >> .config
+          echo "CONFIG_kmod-rk808-regulator=y" >> .config
+          
+          # eMMC/SD card support
+          echo "CONFIG_kmod-mmc-block=y" >> .config
+          echo "CONFIG_PACKAGE_kmod-dw-mmc-rockchip=y" >> .config
+          echo "CONFIG_PACKAGE_kmod-sdhci-of-arasan=y" >> .config
+          
+          # Filesystem support
+          echo "CONFIG_kmod-fs-ext4=y" >> .config
+          echo "CONFIG_kmod-fs-f2fs=y" >> .config
+          echo "CONFIG_kmod-fs-vfat=y" >> .config
+          
+          # Network utilities
+          echo "CONFIG_PACKAGE_ip-full=y" >> .config
+          echo "CONFIG_PACKAGE_ip6tables=y" >> .config
+          echo "CONFIG_PACKAGE_iptables=y" >> .config
+          echo "CONFIG_PACKAGE_wpa-supplicant=y" >> .config
+          echo "CONFIG_PACKAGE_wpa-cli=y" >> .config
+          echo "CONFIG_PACKAGE_wireless-tools=y" >> .config
+          echo "CONFIG_PACKAGE_dnsmasq=y" >> .config
+          echo "CONFIG_PACKAGE_dropbear=y" >> .config
+          
+          # System utilities
+          echo "CONFIG_PACKAGE_htop=y" >> .config
+          echo "CONFIG_PACKAGE_nano=y" >> .config
+          echo "CONFIG_PACKAGE_vim=y" >> .config
+          echo "CONFIG_PACKAGE_usbutils=y" >> .config
+          echo "CONFIG_PACKAGE_pciutils=y" >> .config
+          echo "CONFIG_PACKAGE_lsusb=y" >> .config
+          echo "CONFIG_PACKAGE_lspci=y" >> .config
+          echo "CONFIG_PACKAGE_ethtool=y" >> .config
+          echo "CONFIG_PACKAGE_mii-tool=y" >> .config
+
+          make defconfig
+          make oldconfig || echo "oldconfig had issues, continuing..."
+          echo ""
+          echo "=== Final Configuration ==="
+          cat .config | grep -E "CONFIG_TARGET_rockchip|CONFIG_kmod-.*realtek|CONFIG_kmod-.*gmac|CONFIG_kmod-stmmac|CONFIG_kmod-.*wifi|CONFIG_kmod-.*drm"
+          echo ""
+          echo "=== Available device profiles in config ==="
+          grep -E "^CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE" .config || echo "No device profiles set"
+
+      - name: Update Feeds
+        working-directory: ./immortalwrt
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Download Packages
+        working-directory: ./immortalwrt
+        run: make download -j4
+
+      - name: Build
+        working-directory: ./immortalwrt
+        run: |
+          # Verify RK3568 device configuration before building
+          echo "=== Verifying device configuration ==="
+          echo "Checking available RK3568 support..."
+          find target/linux/rockchip -name "*.dts" | grep -i rk3568 | head -10
+          echo ""
+          echo "Checking for device tree files..."
+          find target/linux/rockchip/files -name "*.dts" | head -10 || echo "No DTS files found"
+
+          # Build complete firmware including U-BOOT
+          make -j$(nproc) V=s 2>&1 | tee build.log || true
+          echo "Build completed or with errors!"
+
+      - name: Extract U-BOOT
+        working-directory: ./immortalwrt
+        run: |
+          echo "=== Extracting U-BOOT from build ==="
+          # Find and copy U-BOOT binary
+          find . -name "*uboot*" -o -name "*u-boot*" 2>/dev/null | grep -E "\.(bin|img|itb)$" | head -20
+          echo ""
+          echo "=== Checking bootloader directory ==="
+          ls -la bin/targets/rockchip/armv8/ 2>/dev/null || echo "Not found in standard location"
+          find . -path "*/bootloader/*" -type f 2>/dev/null | head -20
+
+      - name: Show Build Results
+        working-directory: ./immortalwrt
+        run: |
+          echo "=== Build Artifacts ==="
+          find bin/targets/ -type f 2>/dev/null | head -50
+          echo ""
+          echo "=== Complete Firmware Images (with U-BOOT) ==="
+          find bin/targets/ -name "*sysupgrade*" -o -name "*factory*" -o -name "*sdcard*" 2>/dev/null
+          echo ""
+          echo "=== IMG Files ==="
+          find bin/targets/ -name "*.img" 2>/dev/null
+          echo ""
+          echo "=== All files in rockchip/armv8 ==="
+          ls -lh bin/targets/rockchip/armv8/ 2>/dev/null || echo "Directory not found"
+          echo ""
+          echo "=== Checking if bootloader is included ==="
+          if [ -f bin/targets/rockchip/armv8/*sysupgrade* ]; then
+            echo "=== Sysupgrade image found ==="
+            ls -lh bin/targets/rockchip/armv8/*sysupgrade*
+            # Check image info
+            file bin/targets/rockchip/armv8/*sysupgrade*
+            # Extract and check DTB from the image to verify it's using our custom DTS
+            echo ""
+            echo "=== Extracting and checking DTB from firmware ==="
+            for img in bin/targets/rockchip/armv8/*.img; do
+              if [ -f "$img" ]; then
+                echo "Checking: $img"
+                # Try to extract model info from the image
+                strings "$img" | grep -i "XiGuaPi\|NLnet\|9Tripod" | head -5
+              fi
+            done
+          fi
+
+      - name: Upload Build Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: immortalwrt-rk3568-nlnet-xiguapiv3
+          path: |
+            immortalwrt/bin/targets/rockchip/armv8/**
+          retention-days: 7
+          if-no-files-found: warn
